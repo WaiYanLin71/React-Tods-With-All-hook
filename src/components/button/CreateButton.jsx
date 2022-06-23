@@ -1,7 +1,11 @@
 import React from "react";
 
-const CreateButton = ({name,type}) => {
-	return <button type={type ? type : 'button'} className='btn btn-success'>{name ? name : "Submit"}</button>;
+const CreateButton = ({ type, children }) => {
+	return (
+		<button type={type ? type : "button"} className='btn btn-success'>
+			{children}
+		</button>
+	);
 };
 
 export default CreateButton;

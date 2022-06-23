@@ -1,46 +1,44 @@
 import React, { useReducer } from "react";
 import Context from "./Context";
-import axios from "axios";
-
+import { Toaster } from "react-hot-toast";
 const Provider = ({ children }) => {
 	const reducer = (state, action) => {
 		switch (action.type) {
+			case "store":
+				return [...action.data];
 			case "create":
-				axios
-					.post("http://localhost:8000/api/todos", {
-						name: action.data,
-					})
-					.then((res) => {
-						console.log(res)
-						// return [...state, res.data.todo];
-					})
-					.catch((err) => {
-						console.log(err);
-						return;
-					});
-				break;
-			case "store" :
-				return [...state,...action.data]
+				return [...state, action.data];
+			case "delete":
+				return state.filter(
+					(data) => Number(data.id) !== Number(action.id)
+				);
+			case "update":
+				return state.map((data) => {
+					if (Number(data.id) === Number(action.data.id)) {
+						return { ...data, name: action.data.name };
+					}
+					return data;
+				});
 			default:
 				return state;
 		}
 	};
+
 	const [state, dispatch] = useReducer(reducer, []);
 
 	const data = {
 		todos: state,
-		create: (type, data) => {
-			dispatch({ type, data });
+		dispatch: (action) => {
+			dispatch(action);
 		},
-		delete: (type, data) => {
-			dispatch({ type, data });
-		},
-		store:(type,data) => {
-			dispatch({type,data});
-		}
 	};
 
-	return <Context.Provider value={data}>{children}</Context.Provider>;
+	return (
+		<Context.Provider value={data}>
+			<Toaster />
+			{children}
+		</Context.Provider>
+	);
 };
 
 export default Provider;

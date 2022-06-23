@@ -1,7 +1,15 @@
 import React from "react";
 
-const DeleteButton = ({ name,btn }) => {
-	return <button className={`btn btn-danger ${btn}`}>{name ? name : "Delete"}</button>;
+const DeleteButton = ({ children, btn = "", attribute, confirm }) => {
+	return (
+		<button
+			onClick={confirm}
+			{...attribute}
+			className={`btn btn-danger ${btn}`}
+		>
+			{children}
+		</button>
+	);
 };
 
 export default DeleteButton;
