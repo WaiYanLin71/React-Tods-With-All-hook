@@ -1,18 +1,20 @@
 import React, { useReducer } from "react";
 import Context from "./Context";
 import { Toaster } from "react-hot-toast";
+import Type from "./ActionType";
+
 const Provider = ({ children }) => {
 	const reducer = (state, action) => {
 		switch (action.type) {
-			case "store":
+			case Type.STORE:
 				return [...action.data];
-			case "create":
+			case Type.CREATE:
 				return [...state, action.data];
-			case "delete":
+			case Type.DELETE:
 				return state.filter(
 					(data) => Number(data.id) !== Number(action.id)
 				);
-			case "update":
+			case Type.UPDATE:
 				return state.map((data) => {
 					if (Number(data.id) === Number(action.data.id)) {
 						return { ...data, name: action.data.name };

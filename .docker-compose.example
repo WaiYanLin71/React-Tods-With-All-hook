@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  todo-app:
+    build: ./todo-app
+    container_name: react_c
+    ports:
+    - '3000:3000'
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./todo-app:/app
+      - ./app/node_modules

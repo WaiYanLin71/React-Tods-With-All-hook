@@ -3,116 +3,192 @@ import TodoCreateForm from "../components/Form/TodoCreateForm";
 import Container from "../components/uility/Container";
 import Card from "../components/uility/Card";
 import axios from "axios";
-import EditButton from "../components/button/EditButton";
-import DeleteButton from "../components/button/DeleteButton";
 import Context from "../store/Context";
-import toast from "react-hot-toast";
 import DeleteModal from "../components/modal/DeleteModal";
+import { deleteTodo, editTodo, updateTodo } from "../api/Ajax";
+import toast from "react-hot-toast";
 import EditModal from "../components/modal/EditModal";
+import DeleteManyModal from "../components/modal/DeleteManyModal";
 
 const Home = () => {
 	const { todos, dispatch } = useContext(Context);
 	const [deleteModal, setDeleteModal] = useState(false);
-	const [editId, setEditId] = useState(false);
-
-	function deleteTask() {
-		axios
-			.delete(`http://127.0.0.1:8000/api/todos/${deleteModal}`)
-			.then((res) => {
-				dispatch({ type: "delete", id: deleteModal });
-				toast(res.data, { className: "text-white bg-danger" });
-				setDeleteModal(false);
-			})
-			.catch((error) => {});
-	}
-
+	const [editModal, setEditModal] = useState(false);
+	const [id, setId] = useState(null);
+	const [editData, setEditData] = useState({});
+	const [idList, setIdList] = useState([]);
+	const [deleteManyModal, setDeleteManyModal] = useState(false);
 
 	useEffect(() => {
 		axios
 			.get("http://127.0.0.1:8000/api/todos")
 			.then((res) => {
-				dispatch({ type: "store", data: res.data.todos });
+				dispatch({ type: "STORE", data: res.data.todos });
 			})
 			.catch((error) => {
 				console.log(error);
 			});
 	}, []);
+
+	const confimDelete = () => {
+		deleteTodo(id).then((res) => {
+			dispatch({ type: "DELETE", id: res.data.id });
+			toast.success(res.data.message);
+			setId(null);
+			setDeleteModal(false);
+		});
+	};
+
+	const findData = (id) => {
+		editTodo(id)
+			.then((res) => {
+				setEditData(res.data);
+				setEditModal(true);
+			})
+			.catch((error) => {
+				console.log(error);
+			});
+	};
+
+	const confirmUpdate = (id, data) => {
+		updateTodo(id, data)
+			.then((res) => {
+				dispatch({ type: "UPDATE", data: res.data.todos });
+				toast.success("Updated Successfully");
+				setEditModal(false);
+			})
+			.catch((error) => {
+				toast.error(error.message);
+			});
+	};
+
+	const hasId = (e) => {
+		if (e.target.checked) {
+			setIdList((pre) => [...pre, Number(e.target.value)]);
+			return;
+		}
+		setIdList((pre) =>
+			pre.filter((id) => Number(id) !== Number(e.target.value))
+		);
+	};
+
 	return (
-		<Container>
-			{editId && <EditModal cancel={setEditId} id={editId}/>}
-			{deleteModal && (
-				<DeleteModal
-					cancel={setDeleteModal}
-					confirm={deleteTask}
+		<>	
+			{deleteManyModal && (<DeleteManyModal modal={setDeleteManyModal} id={idList}/>)}
+			{editModal && (
+				<EditModal
+					modal={setEditModal}
+					data={editData}
+					confirm={confirmUpdate}
 				/>
 			)}
-			<div className='row justify-content-center mt-5'>
-				<div className='col-md-6'>
-					<h2 className='mb-3'>Todo Apps</h2>
-					<Card>
-						<TodoCreateForm />
-					</Card>
+			{deleteModal && (
+				<DeleteModal modal={setDeleteModal} confirm={confimDelete} />
+			)}
+			<Container>
+				<div className='row justify-content-center mt-5'>
+					<div className='col-md-6'>
+						<h2 className='mb-3'>Todo Apps</h2>
+						<Card>
+							<TodoCreateForm />
+						</Card>
+					</div>
 				</div>
-			</div>
-			<div className='row justify-content-center mt-5'>
-				<div className='col-md-6'>
-					<h2 className=''>Your Task List</h2>
-					<Card card='shadow-sm' cardBody='p-0'>
-						<table className='table mb-0 table-striped'>
-							<thead>
-								<tr>
-									<th>No</th>
-									<th>Name</th>
-									<th>Action</th>
-								</tr>
-							</thead>
-							<tbody>
-								{todos.map((todo, index) => {
-									return (
-										<tr key={index}>
-											<td>{index + 1}</td>
-											<td>{todo.name}</td>
-											<td>
-												<EditButton
-													attribute={{
-														id: todo.id,
-														onClick: (e) => {
-															setEditId(
+				<div className='row justify-content-center mt-5'>
+					<div className='col-md-6'>
+						<h2 className=''>Your Task List</h2>
+						<Card card='shadow-sm' cardBody='p-0'>
+							<table className='table mb-0 table-striped'>
+								<thead>
+									<tr>
+										<th></th>
+										<th>No</th>
+										<th>Name</th>
+										<th>Action</th>
+									</tr>
+								</thead>
+								<tbody>
+									{todos.map((todo, index) => {
+										return (
+											<tr
+												key={index}
+												style={{
+													verticalAlign: "middle",
+												}}
+											>
+												<td>
+													<input
+														type='checkbox'
+														value={todo.id}
+														onClick={hasId}
+													/>
+												</td>
+												<td>{index + 1}</td>
+												<td>
+													{idList.includes(
+														Number(todo.id)
+													) ? (
+														<strike>
+															{todo.name}
+														</strike>
+													) : (
+														<span>{todo.name}</span>
+													)}
+												</td>
+												<td>
+													<button
+														id={todo.id}
+														className='btn btn-warning text-white mx-2'
+														onClick={(e) => {
+															findData(
 																e.target.id
 															);
-														},
-													}}
-													btn='text-white mx-2'
-												>
-													Edit
-												</EditButton>
-												<DeleteButton
-													attribute={{
-														id: todo.id,
-														onClick: (e) => {
+														}}
+													>
+														Edit
+													</button>
+													<button
+														id={todo.id}
+														className='btn btn-danger'
+														type='button'
+														onClick={(e) => {
 															setDeleteModal(
-																e.target.id
+																true
 															);
-														},
-													}}
-												>
-													Delete
-												</DeleteButton>
+															setId(e.target.id);
+														}}
+													>
+														Delete
+													</button>
+												</td>
+											</tr>
+										);
+									})}
+									{!todos.length && (
+										<tr>
+											<td colSpan='100%'>No Data</td>
+										</tr>
+									)}
+								</tbody>
+								{idList.length > 0 && (
+									<tfoot>
+										<tr>
+											<td colSpan='100%'>
+												<button className='btn btn-danger w-100' type="button" onClick={()=>{
+													setDeleteManyModal(true)
+												}}>
+													Delete Checked Task
+												</button>
 											</td>
 										</tr>
-									);
-								})}
-								{!todos.length && (
-									<tr>
-										<td colSpan='100%'>No Data</td>
-									</tr>
+									</tfoot>
 								)}
-							</tbody>
-						</table>
-					</Card>
+							</table>
+						</Card>
+					</div>
 				</div>
-			</div>
-		</Container>
+			</Container>
+		</>
 	);
 };
 
